@@ -48,7 +48,7 @@ func (h *Handler) Login(c *gin.Context){
 		return
 	}
 
-	c.SetCookie("jwt", u.accessToken, 3600, "/", "localhost", false, true)
+	c.SetCookie("jwt", u.accessToken, 86400, "/", "localhost", false, true)
 
 	res := &LoginUserRes{
 		Username: u.Username,
@@ -66,5 +66,5 @@ func (h *Handler) Logout(c *gin.Context){
 	}
 	
 	c.SetCookie("jwt", "", -1, "", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "logout successfull"})
+	c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
 }

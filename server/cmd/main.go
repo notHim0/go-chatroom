@@ -20,14 +20,30 @@ func main(){
 	}
 
 	var connectionString string = os.Getenv("DATABASE_URI")
+
 	if len(connectionString) == 0 {
 		log.Fatalf("Database uri is not set")
 	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if len(jwtSecret) == 0 {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+
+	
 	dbConn, err := db.NewDatabase(connectionString)
 
 	if err!=nil {
 		log.Fatalf("Could not initailise db connection: %s", err)
 	}
+
+	defer dbConn.Close()
+
+		if err := dbConn.GetDB().Ping(); err != nil {
+		log.Fatalf("Could not ping database: %s", err)
+	}
+	log.Println("Database connection established successfully")
+
 
 	userRep := user.NewRepository(dbConn.GetDB())
 	userSvc := user.NewService(userRep)
@@ -38,5 +54,10 @@ func main(){
 	go hub.Run()
 
 	router.InitRouter(userHandler, wsHandler)
-	router.Start("0.0.0.0:8080")
+
+
+	log.Println("Starting server on 0.0.0.0:8080")
+	if err := router.Start("0.0.0.0:8080"); err != nil {
+		log.Fatalf("Failed to start server: %s", err)
+	}
 }

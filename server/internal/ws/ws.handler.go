@@ -116,4 +116,5 @@ func (h *Handler) GetClients(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, clients)
+		
 }

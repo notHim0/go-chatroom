@@ -16,8 +16,8 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{Rooms: make(map[string]*Room),
 	Register: make(chan *Client),
-Unregister: make(chan *Client),
-Broadcast: make(chan *Message, 5), }
+	Unregister: make(chan *Client),
+	Broadcast: make(chan *Message, 5), }
 }
 
 func (h *Hub) Run() {

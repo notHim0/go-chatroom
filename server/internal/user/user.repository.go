@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type DBTX interface {
@@ -39,7 +40,11 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (*User, e
 	err := r.db.QueryRowContext(ctx, query, email).Scan(&u.ID, &u.Email, &u.Username, &u.Password)
 
 	if err != nil {
-		return &User{}, nil 
+		// ✅ Handle specific errors
+		if err == sql.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		return nil, err // ✅ Return actual error
 	}
 
 	return &u, nil

@@ -6,7 +6,7 @@ type User struct {
 	ID int64 `json:"id" db:"id"`
 	Username string `json:"username" db:"username"`
 	Email string `json:"email" db:"email"`
-	Password string `json:"password" db:"email"`
+	Password string `json:"password" db:"password"`
 }
 
 type Repository interface {
@@ -17,7 +17,7 @@ type Repository interface {
 type CreateUserReq struct {
 	Username string `json:"username" db:"username"`
 	Email string `json:"email" db:"email"`
-	Password string `json:"password" db:"email"`
+	Password string `json: db:"password" db:"password"`
 }
 
 type CreateUserRes struct {
@@ -27,7 +27,7 @@ type CreateUserRes struct {
 }
 type LoginUserReq struct {
 	Email string `json:"email" db:"email"`
-	Password string `json:"password" db:"email"`
+	Password string `json:"password" db:"password"`
 }
 type LoginUserRes struct {
 	accessToken string

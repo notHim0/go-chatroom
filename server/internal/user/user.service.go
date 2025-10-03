@@ -2,8 +2,9 @@ package user
 
 import (
 	"context"
-	"log"
+	"errors"
 	"os"
+	"regexp"
 	"server/util"
 	"strconv"
 	"time"
@@ -11,19 +12,38 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	ErrJWTSecretNotSet = errors.New("JWT_SECRET environment variable not set")
+	ErrInvalidEmail = errors.New("invalid email format")
+	ErrUserNotFound = errors.New("user not found")
+	ErrInvalidPassword = errors.New("invalid password")
+)
+
 type service struct {
 	Repository
 	timeout time.Duration
+	jwtSecret string
 }
 
 func NewService(repository Repository) Service {
 	return &service{
 		repository,
 		time.Duration(2) * time.Second,
+		os.Getenv("JWT_SECRET"),
 	}
 }
 
+func isValidEmail(email string) bool {
+	pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	re := regexp.MustCompile(pattern)
+	return re.MatchString(email)
+}
+
 func (s *service) CreateUser(c context.Context, req *CreateUserReq)(*CreateUserRes, error){
+	if !isValidEmail(req.Email) {
+		return nil, ErrInvalidEmail
+	}
+	
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
 
@@ -61,9 +81,9 @@ type Claims struct {
 }
 
 func (s *service) Login(c context.Context, req *LoginUserReq)(*LoginUserRes, error){
-	var jwtSecret string = os.Getenv("JWT_SECRET")
-	if len(jwtSecret) == 0 {
-		log.Fatalf("jwt secret is not set")
+	
+	if len(s.jwtSecret) == 0 {
+		return nil, ErrJWTSecretNotSet
 	}
 	
 	ctx, cancel := context.WithTimeout(c, s.timeout)
@@ -72,13 +92,13 @@ func (s *service) Login(c context.Context, req *LoginUserReq)(*LoginUserRes, err
 	u, err := s.Repository.GetUserByEmail(ctx, req.Email)
 
 	if err != nil {
-		return &LoginUserRes{}, err
+		return &LoginUserRes{}, ErrUserNotFound
 	}
 
 	err = util.CheckPassword(req.Password, u.Password)
 
 	if err != nil {
-		return &LoginUserRes{}, err
+		return &LoginUserRes{}, ErrInvalidPassword
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,Claims{
@@ -90,7 +110,7 @@ func (s *service) Login(c context.Context, req *LoginUserReq)(*LoginUserRes, err
 		},
 	} )
 
-	ss, err := token.SignedString([]byte(jwtSecret))
+	ss, err := token.SignedString([]byte(s.jwtSecret))
 	if err != nil {
 		return &LoginUserRes{}, err
 	}
